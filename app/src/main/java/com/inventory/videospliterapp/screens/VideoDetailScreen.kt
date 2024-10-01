@@ -29,10 +29,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,10 +54,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.inventory.videospliterapp.component.BelowTextElement
 import com.inventory.videospliterapp.component.VideoPlayer
+import com.inventory.videospliterapp.modal.ResolutionItem
+import com.inventory.videospliterapp.navigation.Reader
 import com.inventory.videospliterapp.viewModal.VideoDetailViewModal
 
-import androidx.compose.runtime.collectAsState
-import com.inventory.videospliterapp.navigation.Reader
+val resolutions = listOf(
+    ResolutionItem(1, "144p", 256, 144),
+    ResolutionItem(2, "240p", 426, 240),
+    ResolutionItem(3, "480p", 854, 480),
+    ResolutionItem(4, "720p", 1280, 720),
+    ResolutionItem(5, "1080p", 1920, 1080),
+    ResolutionItem(6, "4K", 3840, 2160)
+)
 
 
 @Composable
@@ -65,7 +76,11 @@ fun VideoDetialScreen(
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
 
+    val viewModal: VideoDetailViewModal = viewModel()
+
     var selectedText by remember { mutableStateOf("Whatsapp") }
+
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -76,9 +91,38 @@ fun VideoDetialScreen(
             Column {
                 VideoPlayer(videoUrl = url, 0.5f)
 
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,horizontalArrangement =Arrangement.End) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
 
-                    FloatingActionButton(onClick = {  navController.navigate(Reader.SplitVideoScreen.name)}, modifier = Modifier.padding(end = 10.dp, top = 10.dp)) {
+                    FloatingActionButton(onClick = {
+                        if (selectedText=="Size")
+                        {
+                            Log.d("VideoSplitBySize", "Width: ${viewModal.videoWidth} ")
+                            Log.d("VideoSplitBySize", "Height: ${viewModal.videoHeight} ")
+                            val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS+"/VideoSplitterApp/BySize")
+                            viewModal.changeVideoResolution(url,outputDir.toString(),256,144)
+
+                        }else
+                        {
+                            if (selectedText == "Whatsapp")
+                            {
+                                viewModal.time?.let { convertToSeconds(it) }?.let {
+                                    viewModal.splitVideo(
+                                        context,
+                                        url!!,
+                                        it
+                                    )
+                                }
+                            }
+                            navController.navigate("${Reader.SplitVideoScreen.name}/$selectedText")
+                        }
+
+
+
+                    }, modifier = Modifier.padding(end = 10.dp, top = 10.dp)) {
                         Icon(imageVector = Icons.Filled.Check, contentDescription = "Add")
                     }
 
@@ -118,15 +162,15 @@ fun VideoDetialScreen(
 
                 when (selectedText) {
                     "Whatsapp" -> {
-                        SelectedTextArea("Whatsapp", url)
+                        SelectedTextArea(viewModal,"Whatsapp", url)
                     }
 
                     "Duration" -> {
-                        SelectedTextArea("Duration", url)
+                        SelectedTextArea(viewModal,"Duration", url)
                     }
 
                     "Size" -> {
-                        SelectedTextArea("Size", url)
+                        SelectedTextArea(viewModal,"Size", url)
                     }
                 }
 
@@ -147,7 +191,7 @@ fun VideoDetialScreen(
 
 
 @Composable
-fun SelectedTextArea(textString: String? = "Default", videoURL: String? = "") {
+fun SelectedTextArea(viewModal: VideoDetailViewModal,textString: String? = "Default", videoURL: String? = "") {
 
     var videoDuration = getVideoDuration(LocalContext.current, Uri.parse(videoURL))
 
@@ -157,17 +201,19 @@ fun SelectedTextArea(textString: String? = "Default", videoURL: String? = "") {
     var selectedCard by remember { mutableStateOf<String?>("10 Second") }
 
 
-
-
     var clipCount = selectedCard?.let { durationInSeconds.toInt() / convertToSeconds(it) } ?: 0
 
-     val viewModal : VideoDetailViewModal = viewModel()
+    val viewModal: VideoDetailViewModal = viewModel()
 
     val context = LocalContext.current
 
     LaunchedEffect(videoURL) {
         if (!videoURL.isNullOrEmpty()) {
-            viewModal.splitVideo(context, videoURL, convertToSeconds(selectedCard.toString()))
+            if (textString.equals("Whatsapp"))
+            {
+             //   viewModal.splitVideo(context, videoURL, convertToSeconds(selectedCard.toString()))
+            }
+
         }
     }
 
@@ -177,10 +223,6 @@ fun SelectedTextArea(textString: String? = "Default", videoURL: String? = "") {
 
 
     // viewModal.splitVideo(LocalContext.current,videoURL!!,10)
-
-
-
-
 
 
     val cardItems =
@@ -205,7 +247,8 @@ fun SelectedTextArea(textString: String? = "Default", videoURL: String? = "") {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     chunkCountNew?.let {
-                        DynamicText(selectedCard?.let { convertToSeconds(it) }.toString(),
+                        DynamicText(
+                            selectedCard?.let { convertToSeconds(it) }.toString(),
                             it
                         )
                     }
@@ -227,12 +270,8 @@ fun SelectedTextArea(textString: String? = "Default", videoURL: String? = "") {
                                 isCardSelected = selectedCard == time,
                                 isCardClicked = {
                                     selectedCard = it
+                                    viewModal.time = it
                                     clipCount = chunkCountNew!!
-                                    viewModal.splitVideo(
-                                        context,
-                                        videoURL!!,
-                                        convertToSeconds(it)
-                                    )
                                 },
                                 durationInSeconds.toInt()
                             )
@@ -246,10 +285,26 @@ fun SelectedTextArea(textString: String? = "Default", videoURL: String? = "") {
 
             "Size" -> {
 
+                VideoSplitBySize(viewModal)
+
             }
         }
     }
 }
+
+@Composable
+fun VideoSplitBySize(viewModal: VideoDetailViewModal) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        ResolutionGrid(viewModal,resolutions)
+
+    }
+}
+
 
 @Composable
 fun RoundCard(
@@ -345,6 +400,52 @@ fun convertToSeconds(timeString: String): Int {
 fun getOutputFilePath(context: Context): String {
     val outputDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
     return "$outputDir/output_%03d.mp4"
+}
+
+@Composable
+fun ResolutionGrid(viewModal: VideoDetailViewModal, resolutions: List<ResolutionItem>) {
+    // Initialize the selectedResolution with the first item in the list
+    var selectedResolution by remember { mutableStateOf(resolutions.firstOrNull()) }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3), // Adjust the number of columns as needed
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        items(resolutions.size) { index ->
+            val resolution = resolutions[index]
+            // Make the entire Row clickable
+            Row(
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .clickable {
+                        selectedResolution = resolution
+                    } // Select item when Row (text or button) is clicked
+            ) {
+                RadioButton(
+                    selected = selectedResolution == resolution,
+                    onClick = {
+                        selectedResolution = resolution
+
+                        viewModal.videoWidth = resolution.width
+                        viewModal.videoHeight = resolution.height
+
+                              },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = Color.Blue, // Change this to your desired color for the selected state
+                        unselectedColor = Color.Gray // Change this for the unselected state
+                    )
+                )
+                Text(
+                    text = resolution.resolution,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
 }
 
 

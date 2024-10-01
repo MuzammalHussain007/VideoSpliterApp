@@ -10,16 +10,17 @@ import com.inventory.videospliterapp.screens.SplitVideoScreen
 import com.inventory.videospliterapp.screens.VideoScreen
 
 @Composable
-fun VideoNavigation()
-{
+fun VideoNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Reader.VideoScreen.name ) {
-        composable(Reader.VideoScreen.name){
+    NavHost(navController = navController, startDestination = Reader.VideoScreen.name) {
+        composable(Reader.VideoScreen.name) {
             VideoScreen(navController = navController)
         }
 
-        composable(Reader.SplitVideoScreen.name){
-            SplitVideoScreen(navController = navController)
+        Reader.SplitVideoScreen.name
+        composable("${Reader.SplitVideoScreen.name}/{videoUrl}") { backStackEntry ->
+            val videoUrl = backStackEntry.arguments?.getString("videoUrl")
+            SplitVideoScreen(navController, videoUrl)
         }
 
         val uri = Reader.VideoDetialScreen.name
@@ -30,31 +31,31 @@ fun VideoNavigation()
                 VideoDetialScreen(navController, decodedUrl)
             } else {
             }
-        /*composable(Reader.LoginScreen.name){
+            /*composable(Reader.LoginScreen.name){
 
+            }
+
+            composable(Reader.HomeScreen.name){
+
+            }
+
+            composable(Reader.UserStatsScreen.name){
+
+            }
+
+            var detailName = Reader.BookDetailScreen.name
+
+            composable("$detailName/{bookName}") { backStackEntry ->
+                val bookName = backStackEntry.arguments?.getString("bookName")
+            //    BookDetailsScreen(navController, bookName)
+            }
+
+
+
+            composable(Reader.SearchScreen.name){
+               // SearchScreen(navController)
+            }*/
         }
 
-        composable(Reader.HomeScreen.name){
-
-        }
-
-        composable(Reader.UserStatsScreen.name){
-
-        }
-
-        var detailName = Reader.BookDetailScreen.name
-
-        composable("$detailName/{bookName}") { backStackEntry ->
-            val bookName = backStackEntry.arguments?.getString("bookName")
-        //    BookDetailsScreen(navController, bookName)
-        }
-
-
-
-        composable(Reader.SearchScreen.name){
-           // SearchScreen(navController)
-        }*/
     }
-
-}
 }

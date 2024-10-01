@@ -4,13 +4,10 @@ import android.os.Environment
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,13 +16,24 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.inventory.videospliterapp.component.VideoList
 import com.inventory.videospliterapp.mvvm.VideoViewModel
+import java.io.File
+
 
 @Composable
-fun SplitVideoScreen(navController: NavController)
-{
+fun SplitVideoScreen(
+    navController: NavController,
+    buttonClickBehaviour: String?
+) {
+    var outputDir: File? = null
     val videoViewModel: VideoViewModel = hiltViewModel()
     val context = LocalContext.current
-    val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS+"/VideoSplitterApp")
+    outputDir = if (buttonClickBehaviour == "Whatsapp") {
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/VideoSplitterApp")
+
+    } else {
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/VideoSplitterApp/BySize")
+
+    }
     Column(modifier = Modifier.padding(top = 15.dp)) {
         Image(
             imageVector = Icons.Default.ArrowBackIosNew,
@@ -37,13 +45,10 @@ fun SplitVideoScreen(navController: NavController)
                 }
         )
 
-        Log.d("SplitVideoScreen", "uri path = $outputDir ")
+        Log.d("SplitVideoScreen", "$buttonClickBehaviour")
 
-         videoViewModel.loadVideosFromFolder(context, outputDir.toString())
-
-        Log.d("SplitVideoScreen", "SplitVideoScreen: list size = ${videoViewModel.videos.value.size} ")
-
-        VideoList(videoViewModel.videos.value,navController)
+        videoViewModel.loadVideosFromFolder(context, outputDir.toString())
+        VideoList(videoViewModel.videos.value, navController)
 
     }
 

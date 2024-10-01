@@ -15,6 +15,39 @@ class VideoDetailViewModal : ViewModel() {
     private val _chunkCount = MutableStateFlow<Int?>(null)
     val chunkCount: StateFlow<Int?> get() = _chunkCount
 
+    var videoWidth :Int? = null
+    var videoHeight :Int? = null
+    var time :String?=""
+
+    fun changeVideoResolution(inputFilePath: String, outputFilePath: String, width: Int, height: Int) {
+        val uniqueIdForVideo = System.currentTimeMillis()
+        val command = "-i $inputFilePath -vf scale=$width:$height ${outputFilePath}/$uniqueIdForVideo.mp4"
+
+        Log.d("VideoSplitBySize", "changeVideoResolution: $command")
+
+        var file = File(outputFilePath)
+
+        if (!file.exists()) {
+            file.mkdir()
+        }
+
+        // Run FFmpegKit command
+        FFmpegKit.executeAsync(command) { session ->
+            val returnCode = session.returnCode
+
+            Log.d("VideoSplitBySize", "changeVideoResolution: $returnCode ")
+          //  Log.d("VideoSplitBySize", "changeVideoResolution: ${returnCode.isValueSuccess}  ")
+            Log.d("VideoSplitBySize", "changeVideoResolution: ${session.allLogsAsString}  ")
+            if (returnCode.isValueSuccess) {
+                Log.d("VideoSplit", "changeVideoResolution:Success: Video resolution changed to ${width}x${height}")
+            } else {
+                val logs = session.allLogsAsString
+                Log.d("VideoSplitBySize", "${logs} ")
+                println("Error: Video resolution change failed")
+            }
+        }
+    }
+
     fun splitVideo(context: Context, inputFilePath: String, segmentTime: Int) {
 
         val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS+"/VideoSplitterApp")

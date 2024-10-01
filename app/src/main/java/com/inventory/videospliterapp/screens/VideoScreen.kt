@@ -57,15 +57,12 @@ import com.inventory.videospliterapp.mvvm.VideoViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-
 @Composable
 fun VideoScreen(
     videoViewModel: VideoViewModel = hiltViewModel(),
     navController: NavController
 ) {
     var hasPermission by remember { mutableStateOf(false) }
-
 
     val context = LocalContext.current
 
@@ -121,7 +118,7 @@ fun PermissionColume(
     videoViewModel: VideoViewModel,
     permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
 ) {
-    var showDialog by remember { mutableStateOf(false) }
+    val showDialog by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -169,8 +166,8 @@ fun PermissionColume(
 fun LoadingColume() {
     Column(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator(
             color = Color.Red,
@@ -188,17 +185,16 @@ fun VideoCard(video: VideoModel, onCardClicked: (String) -> Unit = {}) {
             .fillMaxSize(),
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(5.dp)
+        shape = RoundedCornerShape(5.dp)
     ) {
         Column(
             modifier = Modifier.padding(4.dp),
-            horizontalAlignment = androidx.compose.ui.Alignment.Start,
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Top
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top
         ) {
             VideoPlayer(video.data) {
                 Log.d("VideoCard", "VideoPlayer: $it ")
                 onCardClicked.invoke("$it")
-
             }
 
             Spacer(modifier = Modifier.height(8.dp))
